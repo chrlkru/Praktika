@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Praktika;
 
 public partial class User
 {
+    [Key]
     public int UsersId { get; set; }
 
     public string Фио { get; set; } = null!;

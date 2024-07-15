@@ -11,7 +11,8 @@ namespace Praktika
 {
     public class ApplicationContext : DbContext
     {
- 
+        public DbSet<User> Users { get; set; }
+        public DbSet<DiscontCard> DiscontCard { get; set; } // Добавлено для работы с таблицей DiscountCard
         public ApplicationContext()
             : base()
         {

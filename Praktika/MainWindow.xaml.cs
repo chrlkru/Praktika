@@ -1,47 +1,83 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using MessageBox = System.Windows.MessageBox;
 
 namespace Praktika
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private ApplicationContext context;
+        public ICollectionView FilteredClients { get; set; }
+
         public MainWindow()
         {
             InitializeComponent();
-            var users = new List<User>();
-             context = new ApplicationContext();
-
-            
-                var userList = context.Users.ToList();
-                ClientsListView.ItemsSource = userList;
-            
+            context = new ApplicationContext();
+            RefreshClientList();
         }
+
         // Обработчик события нажатия кнопки "Добавить клиента"
+        private void EditMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (ClientsListView.SelectedItem != null)
+            {
+                User selectedClient = (User)ClientsListView.SelectedItem;
+                EditClientWindow editWindow = new EditClientWindow(selectedClient);
+                editWindow.Closed += EditWindow_Closed;
+                editWindow.ShowDialog();
+            }
+        }
+
+        private void EditWindow_Closed(object sender, EventArgs e)
+        {
+            ((Window)sender).Closed -= EditWindow_Closed;
+            RefreshClientList();
+        }
+
+        private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (ClientsListView.SelectedItem != null)
+            {
+                User selectedClient = (User)ClientsListView.SelectedItem;
+                context.Users.Remove(selectedClient);
+                context.SaveChanges();
+                RefreshClientList();
+            }
+        }
+        private void FilterTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            PlaceholderTextBlock.Visibility = Visibility.Collapsed;
+        }
+
+        private void FilterTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var textBox = sender as System.Windows.Controls.TextBox;
+            PlaceholderTextBlock.Visibility = string.IsNullOrEmpty(textBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        }
+        private void RefreshClientList()
+        {
+            var userList = context.Users.ToList();
+            FilteredClients = CollectionViewSource.GetDefaultView(userList);
+            FilteredClients.Filter = FilterClients;
+            ClientsListView.ItemsSource = FilteredClients;
+        }
+
         private void AddClientButton_Click(object sender, RoutedEventArgs e)
         {
-            // Получение данных о клиенте из элементов управления
             string lastName = lastNameTextBox.Text;
             string firstName = firstNameTextBox.Text;
             string fatherName = fatherNameTextBox.Text;
             string phoneNumber = phoneNumberTextBox.Text;
             string email = emailTextBox.Text;
             DateTime birthDate = datePicker1.SelectedDate ?? DateTime.Now;
-            // Создание нового объекта клиента
+
             User newUser = new User
             {
                 Фио = $"{lastName} {firstName} {fatherName}",
@@ -49,50 +85,39 @@ namespace Praktika
                 Email = email,
                 ДатаРождения = birthDate
             };
-            int a = 0;
+
             using (var transaction = context.Database.BeginTransaction())
             {
                 try
                 {
-                     a = 1;
-                    // Добавление клиента в базу данных
                     context.Users.Add(newUser);
-                    context.SaveChanges(); // Сохранение изменений клиента
-                    a = 2;
-                    // Получение ID нового клиента
+                    context.SaveChanges();
+
                     int clientId = newUser.UsersId;
-                    a = 3;
-                    // Создание дисконтной карты для клиента
-                    double discount = 5.0; // Здесь можно задать скидку по умолчанию или запросить её у пользователя
-                    double orderSum = 0.0; // Здесь можно задать сумму заказа по умолчанию или запросить её у пользователя
-                    a = 4;
+
                     DiscontCard newDiscountCard = new DiscontCard
                     {
                         UsersId = clientId,
-                        Discont = discount,
-                        OrderSum = orderSum
+                        Discont = 5.0,
+                        OrderSum = 0.0
                     };
-                    a = 5;
 
-                    // Добавление дисконтной карты в базу данных
                     context.DiscontCard.Add(newDiscountCard);
-                    context.SaveChanges(); // Сохранение изменений дисконтной карты
-                    a = 6;
-                    transaction.Commit(); // Подтверждение транзакции
-                    System.Windows.MessageBox.Show("Клиент успешно добавлен и создана дисконтная карта.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    a = 7;
-                    // Очистка полей формы после добавления клиента (если требуется)
+                    context.SaveChanges();
+                    transaction.Commit();
+
+                    MessageBox.Show("Клиент успешно добавлен и создана дисконтная карта.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                     ClearClientFormFields();
-                 
+                    RefreshClientList();
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback(); // Откат транзакции при ошибке
-                    System.Windows.MessageBox.Show($"Ошибка при добавлении клиента: {ex.Message}",a.ToString() , MessageBoxButton.OK, MessageBoxImage.Error);
+                    transaction.Rollback();
+                    MessageBox.Show($"Ошибка при добавлении клиента: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
-        // Метод для очистки полей формы добавления клиента
+
         private void ClearClientFormFields()
         {
             lastNameTextBox.Text = "";
@@ -100,13 +125,32 @@ namespace Praktika
             fatherNameTextBox.Text = "";
             phoneNumberTextBox.Text = "";
             emailTextBox.Text = "";
-            datePicker1.SelectedDate = null; // Очистка выбранной даты
+            datePicker1.SelectedDate = null;
         }
+
+        private bool FilterClients(object item)
+        {
+            if (string.IsNullOrEmpty(FilterTextBox.Text))
+                return true;
+
+            var client = item as User;
+            return client != null && client.Телефон.StartsWith(FilterTextBox.Text);
+        }
+
+        private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (FilteredClients != null)
+            {
+                FilteredClients.Refresh();
+            }
+        }
+
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-
         }
 
-        
+        private void ClientsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+        }
     }
 }

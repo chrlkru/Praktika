@@ -39,9 +39,9 @@ public partial class PraktikaContext : DbContext
         {
             entity.ToTable("DiscontCard");
 
-            entity.HasOne(d => d.OrderList).WithMany(p => p.DiscontCards)
-                .HasForeignKey(d => d.OrderListId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+            //entity.HasOne(d => d.OrderList).WithMany(p => p.DiscontCards)
+            //    .HasForeignKey(d => d.OrderListId)
+            //    .OnDelete(DeleteBehavior.ClientSetNull);
 
             entity.HasOne(d => d.Users).WithMany(p => p.DiscontCards)
                 .HasForeignKey(d => d.UsersId)

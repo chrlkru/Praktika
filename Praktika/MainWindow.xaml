@@ -50,19 +50,38 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <ContextMenu x:Key="ItemContextMenu">
+            <MenuItem Header="Изменить" Click="EditMenuItem_Click"/>
+            <MenuItem Header="Удалить" Click="DeleteMenuItem_Click"/>
+        </ContextMenu>
     </Window.Resources>
     <Grid Background="#E5E5E5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="0" />
-            <ColumnDefinition />
+            <ColumnDefinition Width="339*" />
+            <ColumnDefinition Width="461*"/>
         </Grid.ColumnDefinitions>
-        <TabControl Grid.Column="1">
+        <TabControl Grid.Column="1" Grid.ColumnSpan="2">
             <TabItem Header="Управление клиентами">
                 <Grid Background="#E5E5E5">
                     <TabControl TabStripPlacement="Left">
                         <TabItem Margin="2,1,2,-31" Header="Список клиентов">
                             <Grid Background="#D3D3D3">
-                                <ListView Name="ClientsListView" Margin="10">
+                                <!-- Поле для ввода фильтра -->
+                                <Grid Margin="10,10,10,0">
+                                    <TextBox Name="FilterTextBox" Margin="450,0,0,0" VerticalAlignment="Top" TextChanged="FilterTextBox_TextChanged" GotFocus="FilterTextBox_GotFocus" LostFocus="FilterTextBox_LostFocus" Height="26"/>
+                                    <TextBlock Name="PlaceholderTextBlock" Margin="450,5,5,0" VerticalAlignment="Top" IsHitTestVisible="False" Foreground="Gray" Text="Номер телефона" >
+                                        <UIElement.RenderTransform>
+                                            <TransformGroup>
+                                                <ScaleTransform/>
+                                                <SkewTransform/>
+                                                <RotateTransform/>
+                                                <TranslateTransform/>
+                                            </TransformGroup>
+                                        </UIElement.RenderTransform>
+                                    </TextBlock>
+                                </Grid>
+                                <ListView Name="ClientsListView" Margin="10,40,10,10" ItemsSource="{Binding FilteredClients}" SelectionChanged="ClientsListView_SelectionChanged">
                                     <ListView.View>
                                         <GridView>
                                             <GridViewColumn
@@ -78,15 +97,20 @@
                                                 DisplayMemberBinding="{Binding Телефон}"
                                                 Header="Телефон" />
                                             <GridViewColumn
-                                                Width="150"
+                                                Width="100"
                                                 DisplayMemberBinding="{Binding Email}"
                                                 Header="Email" />
                                             <GridViewColumn
-                                                Width="100"
+                                                Width="120"
                                                 DisplayMemberBinding="{Binding ДатаРождения, StringFormat=\{0:dd.MM.yyyy\}}"
                                                 Header="Дата Рождения" />
                                         </GridView>
                                     </ListView.View>
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
                                 </ListView>
                             </Grid>
                         </TabItem>
@@ -176,7 +200,17 @@
                                     Name="datePicker1"
                                     Margin="287,218,168,122"
                                     DisplayDateEnd="2024-12-31"
-                                    SelectedDateFormat="Short" />
+                                    SelectedDateFormat="Short" FontFamily="Times New Roman" >
+                                    <DatePicker.BorderBrush>
+                                        <LinearGradientBrush EndPoint="0.5,0" StartPoint="0.5,1">
+                                            <GradientStop Color="#FFA3AEB9"/>
+                                            <GradientStop Color="#FF8399A9" Offset="0"/>
+                                            <GradientStop Color="#FF718597" Offset="0"/>
+                                            <GradientStop Color="Transparent" Offset="0"/>
+                                            <GradientStop Offset="0"/>
+                                        </LinearGradientBrush>
+                                    </DatePicker.BorderBrush>
+                                </DatePicker>
                                 <Button
                                     Width="143"
                                     Margin="0,300,0,0"

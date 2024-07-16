@@ -11,8 +11,8 @@ using Praktika;
 namespace Praktika.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20240715075625_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20240715104657_OrderListIdFromDiscontCard")]
+    partial class OrderListIdFromDiscontCard
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -29,7 +29,7 @@ namespace Praktika.Migrations
                     b.Property<double>("Discont")
                         .HasColumnType("REAL");
 
-                    b.Property<int>("OrderListId")
+                    b.Property<int?>("OrderListId")
                         .HasColumnType("INTEGER");
 
                     b.Property<double>("OrderSum")
@@ -94,19 +94,15 @@ namespace Praktika.Migrations
 
             modelBuilder.Entity("Praktika.DiscontCard", b =>
                 {
-                    b.HasOne("Praktika.OrderList", "OrderList")
+                    b.HasOne("Praktika.OrderList", null)
                         .WithMany("DiscontCards")
-                        .HasForeignKey("OrderListId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("OrderListId");
 
                     b.HasOne("Praktika.User", "Users")
                         .WithMany("DiscontCards")
                         .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("OrderList");
 
                     b.Navigation("Users");
                 });
